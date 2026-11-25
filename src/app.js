@@ -1,5 +1,8 @@
 import express from "express";
 
+const users = [];
+const students = [];
+
 const app = express();
 
 app.get("/", (req, res) => {
