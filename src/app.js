@@ -38,14 +38,24 @@ const authenticateJWT = (req, res, next) => {
 }
 
 const users = [];
-const students = [];
+const students = [
+    { id: 1, nome: "Ana Silva", ra: "2024001", nota1: 8, nota2: 7 },
+    { id: 2, nome: "Bruno Souza", ra: "2024002", nota1: 5, nota2: 6 },
+    { id: 3, nome: "Carla Lima", ra: "2024003", nota1: 9, nota2: 8 }
+];
+
+const dadosAlunoValidos = ({ nome, ra, nota1, nota2 }) =>
+    typeof nome === "string" && nome.trim() !== "" &&
+    typeof ra === "string" && ra.trim() !== "" &&
+    typeof nota1 === "number" && Number.isFinite(nota1) &&
+    typeof nota2 === "number" && Number.isFinite(nota2);
 
 const app = express();
 
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.status(200).send("Rota raiz");
+    res.status(200).json({ message: "Rota raiz" });
 });
 
 app.post("/register", async (req, res) => {
@@ -76,6 +86,100 @@ app.post("/login", async (req, res) => {
     );
 
     res.status(200).json( { token } );
+});
+
+app.get("/alunos", authenticateJWT, (req, res) => {
+    res.status(200).json(students);
+});
+
+app.get("/alunos/medias", authenticateJWT, (req, res) => {
+    const medias = students.map(aluno => ({
+        ...aluno,
+        media: (aluno.nota1 + aluno.nota2) / 2
+    }));
+
+    res.status(200).json(medias);
+});
+
+app.get("/alunos/aprovados", authenticateJWT, (req, res) => {
+    const aprovados = students.filter(aluno => (aluno.nota1 + aluno.nota2) / 2 >= 6);
+
+    res.status(200).json(aprovados);
+});
+
+app.get("/alunos/:id", authenticateJWT, (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+        return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const aluno = students.find(aluno => aluno.id === id);
+
+    if (!aluno) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+    }
+
+    res.status(200).json(aluno);
+});
+
+app.post("/alunos", authenticateJWT, (req, res) => {
+    const { id, nome, ra, nota1, nota2 } = req.body;
+
+    if (!Number.isInteger(id) || !dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
+        return res.status(400).json({ message: "Dados do aluno inválidos" });
+    }
+
+    if (students.some(aluno => aluno.id === id)) {
+        return res.status(409).json({ message: "Já existe um aluno com esse ID" });
+    }
+
+    const aluno = { id, nome, ra, nota1, nota2 };
+    students.push(aluno);
+
+    res.status(201).json({ message: "Aluno cadastrado", aluno });
+});
+
+app.put("/alunos/:id", authenticateJWT, (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+        return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const indice = students.findIndex(aluno => aluno.id === id);
+
+    if (indice === -1) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+    }
+
+    const { nome, ra, nota1, nota2 } = req.body;
+
+    if (!dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
+        return res.status(400).json({ message: "Dados do aluno inválidos" });
+    }
+
+    students[indice] = { id, nome, ra, nota1, nota2 };
+
+    res.status(200).json({ message: "Aluno atualizado", aluno: students[indice] });
+});
+
+app.delete("/alunos/:id", authenticateJWT, (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+        return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const indice = students.findIndex(aluno => aluno.id === id);
+
+    if (indice === -1) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+    }
+
+    students.splice(indice, 1);
+
+    res.status(200).json({ message: "Aluno removido" });
 });
 
 export default app;
