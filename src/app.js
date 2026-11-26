@@ -47,8 +47,8 @@ const students = [
 const dadosAlunoValidos = ({ nome, ra, nota1, nota2 }) =>
     typeof nome === "string" && nome.trim() !== "" &&
     typeof ra === "string" && ra.trim() !== "" &&
-    typeof nota1 === "number" && Number.isFinite(nota1) &&
-    typeof nota2 === "number" && Number.isFinite(nota2);
+    typeof nota1 === "number" && nota1 >= 0 && nota1 <= 10 &&
+    typeof nota2 === "number" && nota2 >= 0 && nota2 <= 10;
 
 const app = express();
 
