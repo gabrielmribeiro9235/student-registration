@@ -61,7 +61,7 @@ app.get("/", (req, res) => {
 app.post("/register", async (req, res) => {
     const { username, password } = req.body || {};
 
-    if (!username || !password) {
+    if (typeof username !== "string" || username.trim() === "" || typeof password !== "string" || password.trim() === "") {
         return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
     }
 
