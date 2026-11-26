@@ -65,6 +65,10 @@ app.post("/register", async (req, res) => {
         return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
     }
 
+    if (users.some(user => user.username === username)) {
+        return res.status(409).json({ message: "Usuário já cadastrado" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     users.push({
