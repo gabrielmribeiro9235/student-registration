@@ -124,7 +124,7 @@ app.get("/alunos/aprovados", authenticateJWT, (req, res) => {
 app.get("/alunos/:id", authenticateJWT, (req, res) => {
     const id = Number(req.params.id);
 
-    if (!Number.isInteger(id)) {
+    if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message: "ID inválido" });
     }
 
@@ -140,7 +140,7 @@ app.get("/alunos/:id", authenticateJWT, (req, res) => {
 app.post("/alunos", authenticateJWT, (req, res) => {
     const { id, nome, ra, nota1, nota2 } = req.body || {};
 
-    if (!Number.isInteger(id) || !dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
+    if (!Number.isInteger(id) || id <= 0 || !dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
         return res.status(400).json({ message: "Dados do aluno inválidos" });
     }
 
@@ -157,7 +157,7 @@ app.post("/alunos", authenticateJWT, (req, res) => {
 app.put("/alunos/:id", authenticateJWT, (req, res) => {
     const id = Number(req.params.id);
 
-    if (!Number.isInteger(id)) {
+    if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message: "ID inválido" });
     }
 
@@ -181,7 +181,7 @@ app.put("/alunos/:id", authenticateJWT, (req, res) => {
 app.delete("/alunos/:id", authenticateJWT, (req, res) => {
     const id = Number(req.params.id);
 
-    if (!Number.isInteger(id)) {
+    if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message: "ID inválido" });
     }
 
