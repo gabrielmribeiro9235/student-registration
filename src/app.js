@@ -17,17 +17,17 @@ const authenticateJWT = (req, res, next) => {
     }
 
     if (!token) {
-        return res.status(401).json( { message: "Acesso negado. Token não fornecido" } );
+        return res.status(401).json({ message: "Acesso negado. Token não fornecido" });
     }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
             if (err.name === "TokenExpiredError") {
-                return res.status(401).json( { message: "Acesso negado. Token expirado" } );
-            } else if (err.name === 'JsonWebTokenError') {
-                return res.status(403).json( { message: "Acesso negado. Token inválido" } );
+                return res.status(401).json({ message: "Acesso negado. Token expirado" });
+            } else if (err.name === "JsonWebTokenError") {
+                return res.status(403).json({ message: "Acesso negado. Token inválido" });
             } else {
-                return res.status(403).json( { message: "Acesso negado. Erro na verificação do token" } );
+                return res.status(403).json({ message: "Acesso negado. Erro na verificação do token" });
             }
         }
 
@@ -35,7 +35,7 @@ const authenticateJWT = (req, res, next) => {
 
         next();
     });
-}
+};
 
 const users = [];
 const students = [
@@ -59,7 +59,11 @@ app.get("/", (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
+
+    if (!username || !password) {
+        return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -68,15 +72,15 @@ app.post("/register", async (req, res) => {
         password: hashedPassword
     });
 
-    res.status(201).json( { message: "Usuário registrado" } );
+    res.status(201).json({ message: "Usuário registrado" });
 });
 
 app.post("/login", async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
     const user = users.find(user => user.username === username);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json( { message: "Login incorreto" } );
+        return res.status(401).json({ message: "Login incorreto" });
     }
 
     const token = jwt.sign(
@@ -85,7 +89,7 @@ app.post("/login", async (req, res) => {
         { expiresIn: "1h", algorithm: "HS256" }
     );
 
-    res.status(200).json( { token } );
+    res.status(200).json({ token });
 });
 
 app.get("/alunos", authenticateJWT, (req, res) => {
@@ -94,7 +98,7 @@ app.get("/alunos", authenticateJWT, (req, res) => {
 
 app.get("/alunos/medias", authenticateJWT, (req, res) => {
     const medias = students.map(aluno => ({
-        ...aluno,
+        nome: aluno.nome,
         media: (aluno.nota1 + aluno.nota2) / 2
     }));
 
@@ -102,7 +106,13 @@ app.get("/alunos/medias", authenticateJWT, (req, res) => {
 });
 
 app.get("/alunos/aprovados", authenticateJWT, (req, res) => {
-    const aprovados = students.filter(aluno => (aluno.nota1 + aluno.nota2) / 2 >= 6);
+    const aprovados = students.map(aluno => {
+        const media = (aluno.nota1 + aluno.nota2) / 2;
+        return {
+            nome: aluno.nome,
+            status: media >= 6 ? "aprovado" : "reprovado"
+        };
+    });
 
     res.status(200).json(aprovados);
 });
@@ -124,7 +134,7 @@ app.get("/alunos/:id", authenticateJWT, (req, res) => {
 });
 
 app.post("/alunos", authenticateJWT, (req, res) => {
-    const { id, nome, ra, nota1, nota2 } = req.body;
+    const { id, nome, ra, nota1, nota2 } = req.body || {};
 
     if (!Number.isInteger(id) || !dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
         return res.status(400).json({ message: "Dados do aluno inválidos" });
@@ -153,7 +163,7 @@ app.put("/alunos/:id", authenticateJWT, (req, res) => {
         return res.status(404).json({ message: "Aluno não encontrado" });
     }
 
-    const { nome, ra, nota1, nota2 } = req.body;
+    const { nome, ra, nota1, nota2 } = req.body || {};
 
     if (!dadosAlunoValidos({ nome, ra, nota1, nota2 })) {
         return res.status(400).json({ message: "Dados do aluno inválidos" });
